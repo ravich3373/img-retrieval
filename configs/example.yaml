@@ -1,0 +1,31 @@
+# Benchmark config: run many open-weight models on one dataset.
+#   compret bench --config configs/example.yaml
+#
+# Start with `dummy` (no deps, validates the pipeline). Uncomment the open-weight backends
+# after `uv sync --extra openclip` / `--extra hf` (first run downloads weights). All specs
+# below were verified live (June 2026). See SURVEY.md for the full landscape.
+# (API-only hosted models are out of scope for now.)
+
+data: data/synth_v1
+results: results
+ks: [1, 5, 10]
+notes: "first-wave compositional retrieval sweep"
+
+models:
+  - dummy
+
+  # --- open weights: uv sync --extra openclip ---
+  # - openclip:ViT-L-14-336:openai              # OpenAI CLIP L/14-336 — known-weak baseline
+  # - openclip:ViT-B-32:laion2b_s34b_b79k       # OpenCLIP / LAION-2B
+  # - openclip:ViT-bigG-14:laion2b_s39b_b160k   # OpenCLIP big (heavy)
+  # - openclip:ViT-H-14-378-quickgelu:dfn5b     # Apple DFN5B (strong)
+  # - openclip:EVA02-L-14:merged2b_s4b_b131k    # EVA-02 CLIP
+  # NegCLIP: download negclip.pth from the ARO repo (github.com/mertyg/vision-language-models-are-bows), then:
+  # - openclip:ViT-B-32-quickgelu:/abs/path/to/negclip.pth   # compositionally-improved baseline
+
+  # --- open weights: uv sync --extra hf ---
+  # - hf:google/siglip2-so400m-patch16-384      # SigLIP 2 — current top open tier
+  # - hf:google/siglip-base-patch16-224         # SigLIP v1
+  # - hf:openai/clip-vit-large-patch14-336      # OpenAI CLIP via transformers
+  # - hf:jinaai/jina-clip-v2                     # long-context, multilingual (needs einops+timm)
+  # - hf:facebook/metaclip-2-worldwide-huge-quickgelu   # MetaCLIP 2 (multilingual)
