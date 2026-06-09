@@ -49,7 +49,7 @@ class HFModel:
                     inp = self.processor(
                         text=list(chunk), padding="max_length", truncation=True, return_tensors="pt"
                     ).to(self.device)
-                    feats = self.model.get_text_features(**inp)
+                    feats = _embed(self.model.get_text_features(**inp), torch, "text")
                     out.append(feats.float().cpu().numpy())
         return l2norm(np.concatenate(out, axis=0))
 
@@ -64,7 +64,7 @@ class HFModel:
                     out.append(np.asarray(_to_numpy(feats, torch)))
                 else:
                     inp = self.processor(images=rgb, return_tensors="pt").to(self.device)
-                    feats = self.model.get_image_features(**inp)
+                    feats = _embed(self.model.get_image_features(**inp), torch, "image")
                     out.append(feats.float().cpu().numpy())
         return l2norm(np.concatenate(out, axis=0))
 
@@ -73,6 +73,25 @@ def _to_numpy(feats, torch):
     if isinstance(feats, torch.Tensor):
         return feats.float().cpu().numpy()
     return np.asarray(feats, dtype=np.float32)
+
+
+def _embed(out, torch, kind: str):
+    """``get_text_features``/``get_image_features`` usually return a Tensor, but some models
+    / transformers versions return a ModelOutput (e.g. BaseModelOutputWithPooling). Coerce to
+    the shared-space embedding tensor; prefer the projected embeds, fall back to pooler_output."""
+    if isinstance(out, torch.Tensor):
+        return out
+    key = "text_embeds" if kind == "text" else "image_embeds"
+    for attr in (key, "pooler_output", "last_hidden_state"):
+        v = getattr(out, attr, None)
+        if isinstance(v, torch.Tensor):
+            return v.mean(dim=1) if attr == "last_hidden_state" and v.dim() == 3 else v
+    if isinstance(out, (tuple, list)) and out and isinstance(out[0], torch.Tensor):
+        return out[0]
+    raise TypeError(
+        f"get_{kind}_features returned {type(out).__name__} with no usable embedding tensor "
+        f"(looked for Tensor / {key} / pooler_output). Please report the model id."
+    )
 
 
 @register("hf", "transformers CLIP/SigLIP/SigLIP2/Jina-CLIP via model id. extra: hf")
