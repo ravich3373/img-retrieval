@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.uv/
+
+# Generated datasets and model caches (regenerate via `compret gen`)
+data/*/
+!data/.gitkeep
+.cache/
+*.pt
+*.bin
+*.safetensors
+
+# Experiment outputs — keep the dir, ignore bulky run dumps but track summaries
+results/runs/
+!results/.gitkeep
+
+# Notebooks scratch
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Secrets
+.env
+.env.*
